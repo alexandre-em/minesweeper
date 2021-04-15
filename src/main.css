@@ -24,3 +24,33 @@ img {
   margin: 20px 0;
   max-width: 200px;
 }
+
+
+
+.grid-container {
+  height: 50vh;
+  width : 55vh;
+  margin-left: auto;
+  margin-right: auto;  
+  display: grid;
+  grid-template-columns: repeat(8, 2fr);
+  grid-template-rows: repeat(8, 2fr);
+  grid-column-gap: 0px;
+  grid-row-gap: 0px;
+  background-color: white;
+  border: 1px solid black;
+  }
+
+.main {
+  height: 100vh;
+}
+
+.item {
+  background-color: #80cbc4;
+  border: 1px solid #fff;
+  /* line-height: 50px; */
+  padding: 2px;
+  padding-top: 10px;
+  font-size: 20px;
+  text-align: center;
+}

@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import Browser
 import Html exposing (Html, div, h1, img, sub, text)
-import Html.Attributes exposing (height, src)
+import Html.Attributes exposing (height, src,class)
 import Mine
 
 
@@ -121,13 +121,28 @@ update msg model =
         _ ->
             ( model, Cmd.none )
 
+rowItem: Case -> Html Msg
+rowItem e =
+    case e of 
+    Empty (x,y) show ->
+        div [class "item"]
+        []
+    Mine (x,y) show ->
+        div [class "item"]
+        [text "x"] 
+    Flag (x,y) show ->
+        div [class "item"]
+        [text "flag"]
+    Hint (x,y) value show ->
+        div [class "item"]
+        [text (String.fromInt value)]
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ img [ src "/logo.svg" ] []
-        , h1 [] [ text "Your Elm App is working!" ]
-        , text "Implémentez le démineur !"
+       div [class "main"]
+        [ div[class "grid-container"]
+        (List.map rowItem model.grid)
+        
         ]
 
 
