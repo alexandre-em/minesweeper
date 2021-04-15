@@ -7,13 +7,14 @@ import Mine
 
 
 type Case
-    = Hint ( Int, Int ) Int
-    | Mine ( Int, Int )
-    | Empty ( Int, Int )
+    = Hint ( Int, Int ) Int Bool
+    | Mine ( Int, Int ) Bool
+    | Empty ( Int, Int ) Bool
+    | Flag ( Int, Int ) Bool
 
 
 type alias Model =
-    { grid : List (List Case), width : Int, height : Int }
+    { grid : List Case, width : Int, height : Int }
 
 
 exampleGenerateRandomMines : Cmd Msg
@@ -32,19 +33,22 @@ exampleGenerateRandomMines =
 indexCol : List Case -> Int -> Int -> List Case
 indexCol res i m =
     if m > 0 then
-        indexCol (Empty ( i, m - 1 ) :: res) i (m - 1)
+        indexCol (Empty ( i, m - 1 ) False :: res) i (m - 1)
 
     else
         res
 
 
-indexGrid : List (List Case) -> Int -> Int -> List (List Case)
-indexGrid res n m =
-    if n > 0 then
-        indexGrid (indexCol [] (n - 1) m :: res) (n - 1) m
+indexGrid : List Case -> Int -> Int -> Int -> Int -> List Case
+indexGrid res n m i j =
+    if i < 0 then
+        res
+
+    else if j < 0 then
+        indexGrid res n m (i - 1) (m-1)
 
     else
-        res
+        indexGrid ((Empty (i,j) False)::res) n m i (j - 1)
 
 
 init : ( Model, Cmd Msg )
@@ -59,7 +63,7 @@ init =
     in
     let
         grid =
-            indexGrid [] height width
+            indexGrid [] height width (width-1) (height-1) 
     in
     ( { grid = grid, height = height, width = width }, exampleGenerateRandomMines )
 
@@ -68,34 +72,32 @@ type Msg
     = MinesGenerated (List ( Int, Int ))
     | Begin
 
-initCase (i, j) (x, y) val defaut =
+
+initCase : ( Int, Int ) -> ( Int, Int ) -> Int -> Case -> Bool -> Case
+initCase ( i, j ) ( x, y ) val defaut show =
     if (i == x) && (j == y) then
-                                Mine ( x, y )
+        Mine ( x, y ) show
 
-                            else if ((x + 1) == i || (x - 1) == i || x == i) && ((y - 1) == j || (y + 1) == j || y == j) then
-                                Hint ( i, j ) val
-                                else
-                                    defaut
+    else if ((x + 1) == i || (x - 1) == i || x == i) && ((y - 1) == j || (y + 1) == j || y == j) then
+        Hint ( i, j ) val show
+
+    else
+        defaut
 
 
-
-updateGrid : List (List Case) -> ( Int, Int ) -> List (List Case)
-updateGrid grid ( x, y ) =
+initGrid : List Case -> ( Int, Int ) -> List Case
+initGrid grid ( x, y ) =
     List.map
-        (\row ->
-            List.map
-                (\casex ->
-                    case casex of
-                        Empty ( i, j ) ->
-                            initCase (i,j) (x,y) 1 casex
+        (\casex ->
+            case casex of
+                Empty ( i, j ) show ->
+                    initCase ( i, j ) ( x, y ) 1 casex show
 
-                        Hint ( i, j ) val ->
-                            initCase (i,j) (x,y) (val+1) casex
+                Hint ( i, j ) val show ->
+                    initCase ( i, j ) ( x, y ) (val + 1) casex show
 
-                        _ ->
-                            casex
-                )
-                row
+                _ ->
+                    casex
         )
         grid
 
@@ -107,7 +109,7 @@ initializeGrid mines model =
             ( model, Cmd.none )
 
         h :: t ->
-            initializeGrid t { model | grid = updateGrid model.grid h }
+            initializeGrid t { model | grid = initGrid model.grid h }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
