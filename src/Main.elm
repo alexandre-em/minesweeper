@@ -19,27 +19,29 @@ type alias Model =
 exampleGenerateRandomMines : Cmd Msg
 exampleGenerateRandomMines =
     Mine.generateRandomMines
-        { width = 100
-        , height = 100
-        , minMines = 10
-        , maxMines = 30
+        { width = 7
+        , height = 7
+        , minMines = 3
+        , maxMines = 8
         , initialX = 0
         , initialY = 0
         }
         MinesGenerated
 
-indexCol: List Case -> Int -> Int -> List Case
+
+indexCol : List Case -> Int -> Int -> List Case
 indexCol res i m =
     if m > 0 then
-        indexCol (Empty ( i, (m-1) ) :: res) i (m - 1)
+        indexCol (Empty ( i, m - 1 ) :: res) i (m - 1)
 
     else
         res
 
-indexGrid: List (List Case) -> Int -> Int -> List (List Case)
+
+indexGrid : List (List Case) -> Int -> Int -> List (List Case)
 indexGrid res n m =
     if n > 0 then
-        indexGrid (indexCol [] (n-1) 100 :: res) (n-1) m
+        indexGrid (indexCol [] (n - 1) m :: res) (n - 1) m
 
     else
         res
@@ -49,11 +51,11 @@ init : ( Model, Cmd Msg )
 init =
     let
         height =
-            100
+            8
     in
     let
         width =
-            100
+            8
     in
     let
         grid =
@@ -64,40 +66,48 @@ init =
 
 type Msg
     = MinesGenerated (List ( Int, Int ))
-
--- checkRow row coord =
---     case List.head row of
---         Nothing -> False
---         Just a -> case a of
---             Empty (x,_) -> 
---                case coord of
---                 (x1,_) -> if x == x1 then True else False
---             _ -> False
-
--- updateRow row coord =
---     case row of
---        Empty coord1 -> if coord == coord1 then (Mine coord)::
+    | Begin
 
 
--- updateGrid grid coord =
---     case grid of
---         [] -> grid
---         h::t -> if (checkRow h coord) then grid else updateGrid t coord
-                    
--- initializeGrid: List ( Int, Int ) -> Model -> ( Model, Cmd Msg )
--- initializeGrid mines model =
---     case mines of
---         [] -> (model , exampleGenerateRandomMines)
---         h::t -> ( { model | grid = model.grid } , exampleGenerateRandomMines)
+updateGrid : List (List Case) -> ( Int, Int ) -> List (List Case)
+updateGrid grid ( x, y ) =
+    List.map
+        (\row ->
+            List.map
+                (\casex ->
+                    case casex of
+                        Empty ( i, j ) ->
+                            if (i == x) && (j == y) then
+                                Mine ( x, y )
+
+                            else
+                                casex
+
+                        _ ->
+                            casex
+                )
+                row
+        )
+        grid
+
+
+initializeGrid : List ( Int, Int ) -> Model -> ( Model, Cmd Msg )
+initializeGrid mines model =
+    case mines of
+        [] ->
+            ( model, Cmd.none )
+
+        h :: t ->
+            initializeGrid t { model | grid = updateGrid model.grid h }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    -- case msg of
-    --     MinesGenerated mines ->
-    --         initializeGrid(mines, model)
-    --         _ ->
-    ( model, Cmd.none )
+    case msg of
+        MinesGenerated mines ->
+            initializeGrid mines model
+        _ ->
+            ( model, Cmd.none )
 
 
 view : Model -> Html Msg
