@@ -21,8 +21,8 @@ exampleGenerateRandomMines =
     Mine.generateRandomMines
         { width = 7
         , height = 7
-        , minMines = 3
-        , maxMines = 8
+        , minMines = 1
+        , maxMines = 3
         , initialX = 0
         , initialY = 0
         }
@@ -68,6 +68,16 @@ type Msg
     = MinesGenerated (List ( Int, Int ))
     | Begin
 
+initCase (i, j) (x, y) val defaut =
+    if (i == x) && (j == y) then
+                                Mine ( x, y )
+
+                            else if ((x + 1) == i || (x - 1) == i || x == i) && ((y - 1) == j || (y + 1) == j || y == j) then
+                                Hint ( i, j ) val
+                                else
+                                    defaut
+
+
 
 updateGrid : List (List Case) -> ( Int, Int ) -> List (List Case)
 updateGrid grid ( x, y ) =
@@ -77,11 +87,10 @@ updateGrid grid ( x, y ) =
                 (\casex ->
                     case casex of
                         Empty ( i, j ) ->
-                            if (i == x) && (j == y) then
-                                Mine ( x, y )
+                            initCase (i,j) (x,y) 1 casex
 
-                            else
-                                casex
+                        Hint ( i, j ) val ->
+                            initCase (i,j) (x,y) (val+1) casex
 
                         _ ->
                             casex
@@ -106,6 +115,7 @@ update msg model =
     case msg of
         MinesGenerated mines ->
             initializeGrid mines model
+
         _ ->
             ( model, Cmd.none )
 
