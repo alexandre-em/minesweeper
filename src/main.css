@@ -43,14 +43,24 @@ img {
 
 .main {
   height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .item {
   background-color: #80cbc4;
   border: 1px solid #fff;
-  /* line-height: 50px; */
   padding: 2px;
-  padding-top: 10px;
   font-size: 20px;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.item.hide {
+  background-color:#f8ce96eb;
 }

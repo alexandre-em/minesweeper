@@ -2,7 +2,8 @@ module Main exposing (..)
 
 import Browser
 import Html exposing (Html, div, h1, img, sub, text)
-import Html.Attributes exposing (height, src,class)
+import Html.Attributes exposing (class, height, src)
+import Html.Events exposing (onClick)
 import Mine
 
 
@@ -45,10 +46,10 @@ indexGrid res n m i j =
         res
 
     else if j < 0 then
-        indexGrid res n m (i - 1) (m-1)
+        indexGrid res n m (i - 1) (m - 1)
 
     else
-        indexGrid ((Empty (i,j) False)::res) n m i (j - 1)
+        indexGrid (Empty ( i, j ) False :: res) n m i (j - 1)
 
 
 init : ( Model, Cmd Msg )
@@ -63,14 +64,14 @@ init =
     in
     let
         grid =
-            indexGrid [] height width (width-1) (height-1) 
+            indexGrid [] height width (width - 1) (height - 1)
     in
     ( { grid = grid, height = height, width = width }, exampleGenerateRandomMines )
 
 
 type Msg
     = MinesGenerated (List ( Int, Int ))
-    | Begin
+    | Click (Int, Int)
 
 
 initCase : ( Int, Int ) -> ( Int, Int ) -> Int -> Case -> Bool -> Case
@@ -111,6 +112,20 @@ initializeGrid mines model =
         h :: t ->
             initializeGrid t { model | grid = initGrid model.grid h }
 
+updateCase: Case -> (Int, Int)-> Case
+updateCase c (x1, y1) =
+    case c of
+        Hint ( x, y ) hint _ ->
+            if x==x1 && y==y1 then Hint ( x, y ) hint True else c
+        Mine ( x, y ) _ -> if x==x1 && y==y1 then Mine ( x, y ) True else c
+        Empty ( x, y ) _ -> if x==x1 && y==y1 then Empty ( x, y ) True else c
+        Flag ( x, y ) _ -> if x==x1 && y==y1 then Flag ( x, y ) True else c
+
+
+updateGrid: Model -> (Int, Int) -> ( Model, Cmd Msg )
+updateGrid model (x, y) =
+    let updated = { model | grid = List.map (\c -> updateCase c (x, y)) model.grid} in
+    ( updated , Cmd.none )
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -118,31 +133,52 @@ update msg model =
         MinesGenerated mines ->
             initializeGrid mines model
 
-        _ ->
-            ( model, Cmd.none )
+        Click (x, y) ->
+            updateGrid model (x, y)
 
-rowItem: Case -> Html Msg
+
+rowItem : Case -> Html Msg
 rowItem e =
-    case e of 
-    Empty (x,y) show ->
-        div [class "item"]
-        []
-    Mine (x,y) show ->
-        div [class "item"]
-        [text "x"] 
-    Flag (x,y) show ->
-        div [class "item"]
-        [text "flag"]
-    Hint (x,y) value show ->
-        div [class "item"]
-        [text (String.fromInt value)]
+    case e of
+        Empty (x, y) show ->
+            if show == False then
+                div [ class "item hide", onClick (Click (x, y)) ] []
+
+            else
+                div [ class "item" ]
+                    []
+
+        Mine (x, y) show ->
+            if show == False then
+                div [ class "item hide", onClick (Click (x, y)) ] []
+
+            else
+                div [ class "item" ]
+                    [ text "x" ]
+
+        Flag (x, y) show ->
+            if show == False then
+                div [ class "item hide", onClick (Click (x, y)) ] []
+
+            else
+                div [ class "item" ]
+                    [ text "flag" ]
+
+        Hint (x, y) value show ->
+            if show == False then
+                div [ class "item hide", onClick (Click (x, y)) ] []
+
+            else
+                div [ class "item" ]
+                    [ text (String.fromInt value) ]
+
 
 view : Model -> Html Msg
 view model =
-       div [class "main"]
-        [ div[class "grid-container"]
-        (List.map rowItem model.grid)
-        
+    div [ class "main" ]
+        [ Html.h1 [] [ text "Demineur" ]
+        , div [ class "grid-container" ]
+            (List.map rowItem model.grid)
         ]
 
 
