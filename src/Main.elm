@@ -5,8 +5,10 @@ import Html exposing (Html, div, h1, img, sub, text)
 import Html.Attributes exposing (class, height, src)
 import Html.Events exposing (onClick)
 import Mine
-
-
+width: Int
+width = 8
+height: Int
+height =8
 type Case
     = Hint ( Int, Int ) Int Bool
     | Mine ( Int, Int ) Bool
@@ -21,8 +23,8 @@ type alias Model =
 exampleGenerateRandomMines : Cmd Msg
 exampleGenerateRandomMines =
     Mine.generateRandomMines
-        { width = 7
-        , height = 7
+        { width = (width-1)
+        , height = (height-1)
         , minMines = 1
         , maxMines = 3
         , initialX = 0
@@ -54,14 +56,6 @@ indexGrid res n m i j =
 
 init : ( Model, Cmd Msg )
 init =
-    let
-        height =
-            8
-    in
-    let
-        width =
-            8
-    in
     let
         grid =
             indexGrid [] height width (width - 1) (height - 1)
@@ -112,6 +106,44 @@ initializeGrid mines model =
         h :: t ->
             initializeGrid t { model | grid = initGrid model.grid h }
 
+getElt grid (x, y) =
+    let elt = List.filter (\val -> case val of
+            Empty ( x1, y1 ) _ -> x1==x && y1==y
+            Mine ( x1, y1 ) _ -> x1==x && y1==y
+            Flag (x1, y1) _ -> x1==x && y1==y
+            Hint (x1, y1) _ _ -> x1==x && y1==y) grid in
+    case List.head elt of
+        Just a -> a
+        Nothing -> Empty (x, y) False --cas ou la case est hors grille donc vide
+
+checkFill grid (x, y) =
+    let elt = getElt grid (x, y) in
+    case elt of
+        Empty _ show -> show || False
+        Mine _ _ -> True
+        Flag _ _ -> True
+        Hint _ _ show -> show || False
+
+floodfillRec: List Case -> (Int, Int) -> Case -> List Case
+floodfillRec grid (x, y) prev=
+    let _ = Debug.log ("test") in
+    if x <= 0 || x > height || y <= 0 || y > width || (getElt grid (x, y)) /= prev || checkFill grid (x, y) then grid
+    else
+        let grid1 =List.map (\val -> case val of
+                Empty ( x1, y1 ) _ -> if x1==x && y1==y then Empty (x1, y1) True else val
+                Mine ( x1, y1 ) _ -> if x1==x && y1==y then Mine (x1, y1) True else val
+                Flag (x1, y1) _ -> if x1==x && y1==y then Flag (x1, y1) True else val
+                Hint (x1, y1) ht _ -> if x1==x && y1==y then Hint (x1, y1) ht True else val) grid in
+        let north = floodfillRec grid1 ((x+1), y) prev in
+        let east = floodfillRec north ((x-1), y) prev in
+        let south = floodfillRec east (x, (y+1)) prev in
+        floodfillRec south (x, (y-1)) prev
+
+floodfill: List Case -> (Int, Int) -> List Case
+floodfill grid (x, y)=
+    let prev = getElt grid (x, y) in
+    floodfillRec grid (x,y) prev
+
 updateCase: Case -> (Int, Int)-> Case
 updateCase c (x1, y1) =
     case c of
@@ -124,7 +156,7 @@ updateCase c (x1, y1) =
 
 updateGrid: Model -> (Int, Int) -> ( Model, Cmd Msg )
 updateGrid model (x, y) =
-    let updated = { model | grid = List.map (\c -> updateCase c (x, y)) model.grid} in
+    let updated = { model | grid = floodfill model.grid (x, y) } in
     ( updated , Cmd.none )
 
 update : Msg -> Model -> ( Model, Cmd Msg )
