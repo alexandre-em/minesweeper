@@ -60,9 +60,13 @@ img {
   justify-content: center;
   cursor: pointer;
 }
+.item.hide:hover{
+  background-color: #f8dbb4eb;
+}
 
 .item.hide {
   background-color:#f8ce96eb;
+  transition: 100ms;
 }
 .item.mine {
   background-color: rgb(231, 119, 119);

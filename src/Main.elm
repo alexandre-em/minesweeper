@@ -5,6 +5,8 @@ import Html exposing (Html, div, h1, img, sub, text)
 import Html.Attributes exposing (class, height, src)
 import Html.Events exposing (onClick)
 import Mine
+import Bootstrap.Alert as Alert
+
 width: Int
 width =8
 height: Int
@@ -17,7 +19,7 @@ type Case
 
 
 type alias Model =
-    { grid : List Case, width : Int, height : Int }
+    { grid : List Case, width : Int, height : Int, onGoing: Bool }
 
 
 exampleGenerateRandomMines : Cmd Msg
@@ -60,12 +62,13 @@ init =
         grid =
             indexGrid [] height width (width - 1) (height - 1)
     in
-    ( { grid = grid, height = height, width = width }, exampleGenerateRandomMines )
+    ( { grid = grid, height = height, width = width, onGoing = True }, exampleGenerateRandomMines )
 
 
 type Msg
     = MinesGenerated (List ( Int, Int ))
     | Click (Int, Int)
+    | End
 
 
 initCase : ( Int, Int ) -> ( Int, Int ) -> Int -> Case -> Bool -> Case
@@ -177,6 +180,13 @@ updateGrid model (x, y) =
     let updated = { model | grid = floodfill model.grid (x, y) } in
     ( updated , Cmd.none )
 
+endGame: Model -> ( Model, Cmd Msg )
+endGame model = 
+    let newm = { model | grid = List.map(\val -> case val of
+            Mine coord _ -> Mine coord True
+            _ -> val) model.grid , onGoing = False } in
+    ( newm, Cmd.none )
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -184,7 +194,13 @@ update msg model =
             initializeGrid mines model
 
         Click (x, y) ->
-            updateGrid model (x, y)
+            if model.onGoing then
+                updateGrid model (x, y)
+            else
+                ( model, Cmd.none )
+
+        End ->
+            endGame model
 
 
 rowItem : Case -> Html Msg
@@ -200,7 +216,7 @@ rowItem e =
 
         Mine (x, y) show ->
             if show == False then
-                div [ class "item hide", onClick (Click (x, y)) ] []
+                div [ class "item hide", onClick (End) ] []
 
             else
                 div [ class "item mine" ]
@@ -226,7 +242,9 @@ rowItem e =
 view : Model -> Html Msg
 view model =
     div [ class "main" ]
-        [ Html.h1 [] [ text "Demineur" ]
+        
+        [if model.onGoing == False then div [][ Alert.simpleDanger [] [ text "Game Over !" ] ] else div [][]
+        , Html.h1 [] [ text "Demineur" ]
         , div [ class "grid-container" ]
             (List.map rowItem model.grid)
         ]
