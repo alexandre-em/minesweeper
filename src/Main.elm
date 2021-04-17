@@ -1,17 +1,25 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, div, h1, img, sub, text)
+import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, height, style)
 -- import Html.Events exposing (onClick)
 import Mine
 import Bootstrap.Alert as Alert
 import Html.Events.Extra.Mouse exposing (onContextMenu, onClick)
 
+-- Infos de la Grille
 width: Int
 width = 8
 height: Int
 height = 8
+
+minMines: Int
+minMines = 5
+maxMines: Int
+maxMines = 10
+
+
 type Case
     = Hint ( Int, Int ) Int Bool Bool
     | Mine ( Int, Int ) Bool Bool
@@ -21,18 +29,20 @@ type Case
 type alias Model =
     { grid : List Case, width : Int, height : Int, onGoing: Bool }
 
-
+-- Generation aleatoires des positions des mines dans la grille
 exampleGenerateRandomMines : Cmd Msg
 exampleGenerateRandomMines =
     Mine.generateRandomMines
         { width = (width-1)
         , height = (height-1)
-        , minMines = 5
-        , maxMines = 10
+        , minMines = minMines
+        , maxMines = maxMines
         , initialX = 0
         , initialY = 0
         }
         MinesGenerated
+
+-- Function recursive pour l'initialisation de la Grille
 indexGrid : List Case -> Int -> Int -> Int -> Int -> List Case
 indexGrid res n m i j =
     if i < 0 then
@@ -60,7 +70,7 @@ type Msg
     | Flag (Int, Int)
     | End
 
-
+-- Permet d'incrementer la valeur de Hint ou de l'initialiser
 initCase : ( Int, Int ) -> ( Int, Int ) -> Int -> Case -> Bool -> Bool -> Case
 initCase ( i, j ) ( x, y ) val defaut show flag =
     if (i == x) && (j == y) then
@@ -73,6 +83,7 @@ initCase ( i, j ) ( x, y ) val defaut show flag =
         defaut
 
 
+-- Permet de placer les mines ainsi que les indices autour dans la grille
 initGrid : List Case -> ( Int, Int ) -> List Case
 initGrid grid ( x, y ) =
     List.map
@@ -89,7 +100,7 @@ initGrid grid ( x, y ) =
         )
         grid
 
-
+-- Initialise le model
 initializeGrid : List ( Int, Int ) -> Model -> ( Model, Cmd Msg )
 initializeGrid mines model =
     case mines of
@@ -99,6 +110,7 @@ initializeGrid mines model =
         h :: t ->
             initializeGrid t { model | grid = initGrid model.grid h }
 
+-- permet de recuperer l'element de la grille a la case (x, y)
 getElt grid (x, y) =
     let elt = List.filter (\val -> case val of
             Empty ( x1, y1 ) _ _ -> x1==x && y1==y
@@ -108,6 +120,7 @@ getElt grid (x, y) =
         Just a -> a
         Nothing -> Empty (x, y) False False --cas ou la case est hors grille donc vide
 
+-- Verifie si le contenu d'une case est visible par le joueur ou non
 checkFill grid (x, y) =
     let elt = getElt grid (x, y) in
     case elt of
@@ -115,13 +128,14 @@ checkFill grid (x, y) =
         Mine _ show _ -> show
         Hint _ _ show _ -> show
 
-
+-- Compare deux case pour verifier dans l'algo floodfill les cas de case, et savoir si la suivante doit etre afficher ou non
 checkCase case1 case2 =
     case (case1, case2) of
     (Empty _ _ _, Empty _ show2 _) -> False || show2
     (Hint _ _ _ _, Empty _ show _) -> False || show
     _ -> True
 
+-- Met a jour la visibilite d'une seule case (quand on clique sur un Hint/Mine )
 clickMineHint grid origin =
     case origin of
         Mine (x, y) _ _ -> List.map(\val -> case val of
@@ -132,6 +146,7 @@ clickMineHint grid origin =
             _ -> val) grid
         _ -> grid
 
+-- Algo recursif de floodfill, qui permet de propager la visibilite des cases lorsqu'elles sont Empty et sont delimites par les Hint
 floodfillRec: List Case -> (Int, Int) -> Case -> Case -> List Case
 floodfillRec grid (x, y) prev origin=
     if (x < 0) || (x >= height) || (y < 0) || (y >= width) then grid
@@ -187,6 +202,7 @@ update msg model =
             endGame model
 
 
+-- View de chaque case, mise a jour dynamiquement avec les donnees de la grille
 rowItem : Case -> Html Msg
 rowItem e =
     case e of
