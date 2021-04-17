@@ -3,10 +3,10 @@ module Main exposing (..)
 import Browser
 import Html exposing (Html, div, h1, img, sub, text)
 import Html.Attributes exposing (class, height, style)
-import Html.Events exposing (onClick)
+-- import Html.Events exposing (onClick)
 import Mine
 import Bootstrap.Alert as Alert
-import Html.Events.Extra.Mouse exposing (onContextMenu)
+import Html.Events.Extra.Mouse exposing (onContextMenu, onClick)
 
 width: Int
 width = 8
@@ -125,10 +125,10 @@ checkCase case1 case2 =
 clickMineHint grid origin =
     case origin of
         Mine (x, y) _ _ -> List.map(\val -> case val of
-            Mine (x1, y1) _ flag -> if x1==x && y1==y && (not flag) then Mine (x, y) True flag else val
+            Mine (x1, y1) _ flag -> if x1==x && y1==y then Mine (x, y) True flag else val
             _ -> val) grid
         Hint (x, y) _ _ _ -> List.map(\val -> case val of
-            Hint (x1, y1) hint _ flag -> if x1==x && y1==y && (not flag) then Hint (x, y) hint True flag else val
+            Hint (x1, y1) hint _ flag -> if x1==x && y1==y then Hint (x, y) hint True flag else val
             _ -> val) grid
         _ -> grid
 
@@ -192,9 +192,9 @@ rowItem e =
     case e of
         Empty (x, y) show flag ->
             if show == False && flag == False then
-                div [ class "item hide", onClick (Click (x, y)), onContextMenu (\e -> Flag (x, y)) ] []
+                div [ class "item hide", onClick (\event -> Click (x, y)), onContextMenu (\event -> Flag (x, y)) ] []
             else if flag == True then
-                div [ class "item flag" ]
+                div [ class "item flag", onContextMenu (\event -> Flag (x, y)) ]
                     [ text "🚩" ]
             else
                 div [ class "item" ]
@@ -202,9 +202,9 @@ rowItem e =
 
         Mine (x, y) show flag ->
             if show == False && flag == False then
-                div [ class "item hide", onClick (End) ] []
+                div [ class "item hide", onClick (\event -> End), onContextMenu (\event -> Flag (x, y)) ] []
             else if flag == True then
-                div [ class "item flag" ]
+                div [ class "item flag", onContextMenu (\event -> Flag (x, y)) ]
                     [ text "🚩" ]
             else
                 div [ class "item mine" ]
@@ -212,9 +212,9 @@ rowItem e =
 
         Hint (x, y) value show flag ->
             if show == False then
-                div [ class "item hide", onClick (Click (x, y)) ] []
+                div [ class "item hide", onClick (\event -> Click (x, y)), onContextMenu (\event -> Flag (x, y)) ] []
             else if flag == True then
-                div [ class "item flag" ]
+                div [ class "item flag", onContextMenu (\event -> Flag (x, y)) ]
                     [ text "🚩" ]
             else
                 div [ class "item" ]
