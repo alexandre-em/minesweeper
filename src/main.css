@@ -64,3 +64,6 @@ img {
 .item.hide {
   background-color:#f8ce96eb;
 }
+.item.mine {
+  background-color: rgb(231, 119, 119);
+}

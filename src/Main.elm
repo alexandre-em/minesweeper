@@ -6,7 +6,7 @@ import Html.Attributes exposing (class, height, src)
 import Html.Events exposing (onClick)
 import Mine
 width: Int
-width = 8
+width =8
 height: Int
 height =8
 type Case
@@ -25,8 +25,8 @@ exampleGenerateRandomMines =
     Mine.generateRandomMines
         { width = (width-1)
         , height = (height-1)
-        , minMines = 1
-        , maxMines = 3
+        , minMines = 5
+        , maxMines = 10
         , initialX = 0
         , initialY = 0
         }
@@ -119,30 +119,48 @@ getElt grid (x, y) =
 checkFill grid (x, y) =
     let elt = getElt grid (x, y) in
     case elt of
-        Empty _ show -> show || False
-        Mine _ _ -> True
-        Flag _ _ -> True
-        Hint _ _ show -> show || False
+        Empty _ show -> show
+        Mine _ show -> show
+        Flag _ show -> show
+        Hint _ _ show -> show
 
-floodfillRec: List Case -> (Int, Int) -> Case -> List Case
-floodfillRec grid (x, y) prev=
-    let _ = Debug.log ("test") in
-    if x <= 0 || x > height || y <= 0 || y > width || (getElt grid (x, y)) /= prev || checkFill grid (x, y) then grid
+
+checkCase case1 case2 =
+    case (case1, case2) of
+    (Empty _ _, Empty _ show2) -> False || show2
+    (Hint _ _ _, Empty _ show) -> False || show
+    _ -> True
+
+clickMineHint grid origin =
+    case origin of
+        Mine (x, y) _ -> List.map(\val -> case val of
+            Mine (x1, y1) _ -> if x1==x && y1==y then Mine (x, y) True else val
+            _ -> val) grid
+        Hint (x, y) _ _ -> List.map(\val -> case val of
+            Hint (x1, y1) hint _ -> if x1==x && y1==y then Hint (x, y) hint True else val
+            _ -> val) grid
+        _ -> grid
+
+floodfillRec: List Case -> (Int, Int) -> Case -> Case -> List Case
+floodfillRec grid (x, y) prev origin=
+    if (x < 0) || (x >= height) || (y < 0) || (y >= width) then grid
+    else if checkCase (getElt grid (x, y)) prev then clickMineHint grid origin
+    else if checkFill grid (x, y) then grid
     else
         let grid1 =List.map (\val -> case val of
                 Empty ( x1, y1 ) _ -> if x1==x && y1==y then Empty (x1, y1) True else val
                 Mine ( x1, y1 ) _ -> if x1==x && y1==y then Mine (x1, y1) True else val
                 Flag (x1, y1) _ -> if x1==x && y1==y then Flag (x1, y1) True else val
                 Hint (x1, y1) ht _ -> if x1==x && y1==y then Hint (x1, y1) ht True else val) grid in
-        let north = floodfillRec grid1 ((x+1), y) prev in
-        let east = floodfillRec north ((x-1), y) prev in
-        let south = floodfillRec east (x, (y+1)) prev in
-        floodfillRec south (x, (y-1)) prev
+        let north = floodfillRec grid1 ((x+1), y) (getElt grid (x, y)) origin in
+        let east = floodfillRec north ((x-1), y) (getElt grid (x, y)) origin in
+        let south = floodfillRec east (x, (y+1)) (getElt grid (x, y)) origin in
+        floodfillRec south (x, (y-1)) (getElt grid (x, y)) origin
 
 floodfill: List Case -> (Int, Int) -> List Case
 floodfill grid (x, y)=
     let prev = getElt grid (x, y) in
-    floodfillRec grid (x,y) prev
+    floodfillRec grid (x,y) prev prev
 
 updateCase: Case -> (Int, Int)-> Case
 updateCase c (x1, y1) =
@@ -185,7 +203,7 @@ rowItem e =
                 div [ class "item hide", onClick (Click (x, y)) ] []
 
             else
-                div [ class "item" ]
+                div [ class "item mine" ]
                     [ text "x" ]
 
         Flag (x, y) show ->
@@ -194,7 +212,7 @@ rowItem e =
 
             else
                 div [ class "item" ]
-                    [ text "flag" ]
+                    [ text "!" ]
 
         Hint (x, y) value show ->
             if show == False then
