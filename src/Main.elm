@@ -101,14 +101,14 @@ initGrid grid ( x, y ) =
         grid
 
 -- Initialise le model
-initializeGrid : List ( Int, Int ) -> Model -> ( Model, Cmd Msg )
-initializeGrid mines model =
+initializeGrid : List ( Int, Int ) -> List Case -> List Case
+initializeGrid mines grid =
     case mines of
         [] ->
-            ( model, Cmd.none )
+            grid
 
         h :: t ->
-            initializeGrid t { model | grid = initGrid model.grid h }
+            initializeGrid t (initGrid grid h)
 
 -- permet de recuperer l'element de la grille a la case (x, y)
 getElt grid (x, y) =
@@ -183,7 +183,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         MinesGenerated mines ->
-            initializeGrid mines model
+            ( { model | grid = initializeGrid mines model.grid }, Cmd.none )
 
         Click (x, y) ->
             if model.onGoing then

@@ -12,6 +12,17 @@ Le projet à été divisé en 3 parties, donc 1 tache par personne:
 
 puis nous avons terminé le projet, par la gestion de l'evenement de **fin de jeu**, donc lorsque l'utilisateur clique sur une mine.
 
+## **Installation du projet**
+```sh
+$ cd demineur
+$ npm install
+$ npm run start
+```
+Lancer les tests:
+```sh
+$ elm-test
+```
+
 ## **Structure du code**
 Le programme est separe en *3 fichiers*: `Mine.elm`, `main.css` et `Main.elm`.
 - `Mine.elm`: qui contient le code de generation aleatoire des positions des mines dans la grille.
@@ -39,5 +50,5 @@ Le programme est separe en *3 fichiers*: `Mine.elm`, `main.css` et `Main.elm`.
 
 
 ## **Problemes rencontres**
-- Recuperation, Mise a jour de la grille: il n'y a pas de fonctions dans le module `List` qui permet de recupere, de modifier un element dans la list. Nous avons alors cree un type qui contient le numero de la ligne et colonne, pour ensuite utilise `List.filter` afin de recupere un element de la grille et `List.map` afin de modifier un element dans la list. Cela implique que le programme doit parcourir plusieurs fois la grille.
+- Recuperation, Mise a jour de la grille: il n'y a pas de fonctions dans le module `List` qui permet de recupere, de modifier un element dans la list. Nous avons alors cree un type qui contient le numero de la ligne et colonne, pour ensuite utilise `List.filter` afin de recupere un element de la grille et `List.map` afin de modifier un element dans la list. Cela implique la grille ne doit pas etre trop grande, ce qui causerait une erreur de nombre de recursion.
 - Niveau syntax, lorsque l'on veut recupere le `head`/`tail` d'une liste, les fonctions renvoient un type `Maybe` et lorsqu'il y a deja plusieurs pattern matching, on s'est a plusieurs reprise perdu. Pour cela, on a du separe le code en plusieurs petites fonctions, afin que ce soit plus visible.
